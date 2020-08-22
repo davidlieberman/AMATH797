@@ -55,7 +55,7 @@ p1 = ggplot(data = states) +
   stat_density_2d(data = sample_data, aes(x = Longitude, y = Latitude), alpha = 0.75, color = "springgreen3") +
   coord_sf(xlim = c(-128, -115), ylim = c(32, 42.5)) +
   labs(title = "KDE-SCMS(V1)",
-       x = expression(atop("Longitude", paste(tau, " = 0.00"))),
+       x = expression(atop("Longitude", paste("(", tau, " = 0.00)"))),
        y = "Latitute") +
   theme(panel.grid.major = element_line(colour = "grey"),
         panel.grid.minor = element_blank(),
@@ -78,7 +78,7 @@ p2 = ggplot(data = states) +
   stat_density_2d(data = sample_data, aes(x = Longitude, y = Latitude), alpha = 0.75, color = "springgreen3") +
   coord_sf(xlim = c(-128, -115), ylim = c(32, 42.5)) +
   labs(title = "KDE-SCMS(V2)",
-       x = expression(atop("Longitude", paste(tau, " = 0.02"))),
+       x = expression(atop("Longitude", paste("(", tau, " = 0.02)"))),
        y = "") +
   theme(panel.grid.major = element_line(colour = "grey"),
         panel.grid.minor = element_blank(),
