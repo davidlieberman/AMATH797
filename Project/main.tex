@@ -1,0 +1,175 @@
+\documentclass[letterpaper,reqno, 11pt]{amsart}
+\usepackage[nomarginpar,margin=1in]{geometry}
+\usepackage{mathtools,amsthm,amssymb}
+\usepackage{mathrsfs,dsfont}
+\usepackage{cancel}
+\usepackage{fancyhdr,hyperref}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{collectbox}
+\usepackage{graphicx,subfig}
+\usepackage{relsize}
+\usepackage[style=numeric,url=false]{biblatex}
+
+\allowdisplaybreaks
+
+\pagestyle{fancy}{
+\fancyhf{}
+\lfoot{\today} 
+\cfoot{Lieberman}
+\rfoot{Page \thepage}
+}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0.1pt}
+
+\advance\footskip 0.4cm
+\advance\textheight -0.4cm
+\calclayout
+
+\setlength{\parindent}{0in}
+
+\urlstyle{same}
+\definecolor{darkblue}{RGB}{0,50,130}
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+
+\theoremstyle{definition} 
+\newtheorem{remark}{Remark}
+\newtheorem{definition}[section]{Definition}
+
+
+\makeatletter
+\newcommand{\mybox}{%
+    \collectbox{%
+        \setlength{\fboxsep}{1pt}%
+        \fbox{\BOXCONTENT}%
+    }%
+}
+\makeatother
+
+\renewcommand{\qedsymbol}{$\blacksquare$}
+\newcommand{\dd}[1]{\mathop{}\!\mathrm{d}#1}
+\newcommand{\Prob}[1]{\mathbb{P} \left(#1\right)}
+\newcommand{\1}{\mathds{1}}
+
+\addbibresource{references.bib}
+
+\begin{document}
+\title{Low-Dimensional Filamentary Structures}
+\author{David Lieberman}
+\maketitle
+\thispagestyle{fancy}
+
+In general, the local maxima of a function $f(x)$ in the direction of a vector $a$ is given by the set of points $x$ such that:
+$$a^T \nabla f(x) = 0, \quad a^T \mathrm{H}f(x)a < 0$$
+
+\begin{definition}
+A \textit{ridge point} is one for which:
+$$V(x) V(x)^T \nabla f(x) = 0 \quad \text{AND} \quad V(x)^T \mathrm{H}f(x) V(x) < 0$$
+with V(x) taken to be the second eigenvector of H$f(x)$ corresponding to the second lowest energy eigenvector $\lambda_2$. Note: the quadratic form with the Hessian being negative implies all eigenvalues of H$f(x)$ are negative.
+\end{definition}
+
+\begin{remark}
+Note that in the gradient expression, the left hand side $V(x) V(x)^T \nabla f(x)$ has the interpretation that the “projected gradient” (the gradient in the direction of the normal) is zero, so $x$ lies in the tangent space and one of the eigenvectors of the Hessian is parallel with the gradient. In the Hessian expression, we see that the eigenvalues in the normal space must all be negative. In other words, the ridge is a local maximizer of the density when moving in the normal direction defined by the Hessian.
+\end{remark}
+
+\begin{definition}
+A \textit{filament} is simply the set of ridge points of a smooth function (for our purposes a PDF) where the eigengap $\lambda_1(x) - \lambda_2(x) > 0$ (this is ensured as the eigenvalues of the Hessian are all negative, and $\lvert \lambda_2 \rvert  > \lvert \lambda_1 \rvert$). Thus, filaments are smooth low-dimensional structures with high density.
+\end{definition}
+
+\textbf{Context.} The concept of a filament and the methods described herein for finding them take inspiration from prior clustering techniques of maximum likelihood. The points of the filament are by construction a subset of the local maxima of the PDF. Thus, we may employ a modified version of the mean-shift algorithm already widely used in clustering, and just add the additional constraint that these points must also be maxima in the tangent space.
+
+\quad So far, filament techniques have been almost exclusively applied in the context of cosmological data to study filamentary star structures in galaxies. Below, we validate the Kernel Density Estimator Subspace Constrained Mean-Shift algorithm (KDE-SCMS) against known results on the canonical California earthquakes geospacial data set, before applying it to the COVID-19 time-series data published by Johns Hopkins as a means of tracking path of spread of the coronavirus across America.
+
+\setcounter{section}{0}
+\section{Filament Estimation}
+\subsection{KDE-SCMS}
+From a high-level, the Kernel Density Estimator Subspace Constrained Mean-Shift (KDE-SCMS) algorithm, can be understood as having two main steps:
+
+\begin{enumerate}
+    \item First, compute the Kernel Density Estimator at every point, filtering out points in low-density regions below a threshold hyper-parameter $\tau$. This step essentially performs a de-noising of the data to ensure we don't end up with isolated points in low density regions which are too far from the pack to have perturbations strong enough to iteratively converge towards the maxima in the next step.
+    \item Second, perform the subspace constrained mean-shift algorithm to converge to the local maxima, iteratively. This step essentially performs a modified gradient ascent using a kernel function.
+\end{enumerate}
+
+\mbox{}
+
+The Step (1) was first introduced by Wasserman in \cite{SuRF}, so we denote KDE-SCMS(V1) as \textbf{without} thresholding, and KDE-SCMS(V2) as \textbf{with} thresholding. 
+
+Below we visualize the impact of thresholding our data using the California earthquakes data set as a reference point:
+
+\begin{figure}[hbt]
+    \centering
+    \subfloat[$\tau = 0$]{{\includegraphics[width=0.35\textwidth]{V1.png} }}%
+    \qquad
+    \subfloat[$\tau = 0.02$]{{\includegraphics[width=0.35\textwidth]{V2.png} }}%
+    \caption{\smaller Black = Input Data; Red = Converged Filament Set; Blue-Bands = Contour Lines of KDE}%
+    \label{fig:thresholding}%
+\end{figure}
+
+Unsurprisingly, but excitingly nonetheless, the filamentary structure here, actually finds the fault-lines in California from just the locations of the earthquakes alone.
+
+\begin{figure}[hbt]
+    \centering
+    \subfloat{{\includegraphics[width=0.3\textwidth]{V2.png} }}%
+    \qquad
+    \subfloat{{\includegraphics[width=0.3\textwidth]{faultlines.png} }}%
+    \label{fig:faultlines}%
+\end{figure}
+
+\newpage
+Now we will now give a more detailed description of the KDE-SCMS algorithm\cite{algo}:
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{algorithm.png}
+\end{figure}
+
+We note that this algorithm has time complexity issues with run-time $O(N^2 d^3)$ where N is the number of points and d is the dimension, as we are performing a double for-loop: outside for-loop running over all the points (parallelizable!), while the inside for-loop calculates the update perturbation for a single point by taking the kernel function over all other points. Note that the mean-shift vector $m(x)$ is essentially our estimator for the gradient of the PDF $\nabla f(x)$ as originally described on page 1. We want this matrix quantity to converge to the zero vector, so our termination criteria is $\Vert m(x) \Vert < \epsilon$.
+
+\section{Application}
+
+We thought it might be feasible to try and use the KDE-SCMS to track the spread of COVID across the United States, as the virus is highly contagious so density of cases serve as a good heuristic for path of transmission. We used Johns Hopkins' COVID-19 time-series data\cite{covid_data} which gives the number of COVID confirmed cases, by county. As we wanted to make sure data was not singular, we repeated the latitude and longitude coordinates of a point by the number of cases and added a small amount of noise. This is a realistic modification as people from around the county are not isolated at a single point and live proximal to one another. We provide an interactive visualization of our data \href{https://kepler.gl/demo/map?mapUrl=https://dl.dropboxusercontent.com/s/tmpj2dkr0w1vhoj/keplergl_7k43a5f.json}{\textcolor{darkblue}{here}}.
+
+
+\newpage
+\Large Here are some initial time-series results we obtained through KDE-SCMS:
+\mbox{}
+\normalsize (See supplementary C++ code for our implementation)
+
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{3.png}
+\end{figure}
+
+\newpage
+
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{6.png}
+\end{figure}
+
+\newpage
+
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{9.png}
+\end{figure}
+
+\newpage
+
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{12.png}
+\end{figure}
+
+\newpage
+
+Unfortunately, as N tends towards a million and a half:
+\begin{figure}[hbt]
+\includegraphics[width=\textwidth]{millions.png}
+\end{figure}
+
+the runtime goes up dramatically and KDE-SCMS becomes totally infeasible without significant further optimizations. We implemented nearest-neighbors for points within 3 standard deviations (i.e. 3 times the kernel bandwidth, which approximates this when chosen well) the inner for-loop kernel computations which gave good improvements with negligible difference in results. In fact the above graphs were generated using this method. However, we remain unable to compute KDE-SCMS on data sets with 50 thousand points. Hopefully, more to come soon.
+
+\newpage
+\nocite{*}
+\printbibliography
+
+\end{document}
