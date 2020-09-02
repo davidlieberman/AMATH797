@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ---
 title: "AMATH797 Final Project"
 author: "David Lieberman"
@@ -227,3 +228,234 @@ ggplot(data = states) +
 
 ggsave("millions.png", width = 12, height = 6)
 ```
+=======
+---
+title: "AMATH797 Final Project"
+author: "David Lieberman"
+header-includes:
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup}
+library(ggplot2)
+library(sf)
+library(maps)
+library(patchwork)
+library(extrafont)
+library(data.table)
+library(purrr)
+library(dplyr)
+library(lubridate)
+library(Rcpp)
+library(RcppEigen)
+
+
+knitr::opts_knit$set(root.dir = "C:\\Users\\darkg\\Desktop\\Homework Scans\\2020S_AMATH797\\Project")
+loadfonts(device = "win")
+```
+
+```{r}
+world = st_as_sf(maps::map("world", plot = FALSE, fill = TRUE))
+states = st_as_sf(maps::map("state", plot = FALSE, fill = TRUE))
+faults = read_sf("faults//faults.shp") %>% filter(Location == "California" & linetype == "Well Constrained") %>% select(geometry)
+# counties = st_as_sf(maps::map("county", plot = FALSE, fill = TRUE))
+# counties = subset(counties, grepl("california", counties$ID))
+```
+
+```{r}
+sourceCpp("find_filament_R.cpp")
+```
+
+## Earthquake Data
+```{r}
+earthquakes_df = fread("earthquakes.csv")
+sample_data = sample_n(earthquakes_df[,-3], 4000)
+```
+
+```{r}
+results = SCMS(data = as.matrix(sample_data), bandwidth = 0.325, threshold = 0.0, max_iterations = 10000, epsilon = 0.0001, print_iter = FALSE)
+```
+
+```{r}
+p1 = ggplot(data = states) +
+  geom_sf() +
+  geom_point(data = sample_data, aes(x = Longitude, y = Latitude), color = "black") + 
+  geom_point(data = results, aes(x = Longitude, y = Latitude), color = "red") +
+  stat_density_2d(data = sample_data, aes(x = Longitude, y = Latitude), alpha = 0.75, color = "springgreen3") +
+  coord_sf(xlim = c(-128, -115), ylim = c(32, 42.5)) +
+  labs(title = "KDE-SCMS(V1)",
+       x = expression(atop("Longitude", paste("(", tau, " = 0.00)"))),
+       y = "Latitute") +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(hjust = 0.5, size = 12),
+        text = element_text(family = "CMU Serif"))
+p1
+```
+
+```{r}
+results = SCMS(data = as.matrix(sample_data), bandwidth = 0.325, threshold = 0.02, max_iterations = 10000, epsilon = 0.0001, print_iter = FALSE)
+```
+
+```{r}
+p2 = ggplot(data = states) +
+  geom_sf() +
+  geom_point(data = sample_data, aes(x = Longitude, y = Latitude), color = "black") + 
+  geom_point(data = results, aes(x = Longitude, y = Latitude), color = "red") +
+  stat_density_2d(data = sample_data, aes(x = Longitude, y = Latitude), alpha = 0.75, color = "springgreen3") +
+  coord_sf(xlim = c(-128, -115), ylim = c(32, 42.5)) +
+  labs(title = "KDE-SCMS(V2)",
+       x = expression(atop("Longitude", paste("(", tau, " = 0.02)"))),
+       y = "") +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(hjust = 0.5, size = 12),
+        text = element_text(family = "CMU Serif"))
+p2
+```
+
+```{r, fig.width=10, fig.height=6}
+p3 = p1 + p2
+ggsave("combined.png", plot = p3, width = 10, height = 6)
+p3
+```
+
+```{r}
+ggplot(data = world) +
+  geom_sf(data = states) +
+  geom_point(data = sample_data, aes(x = Longitude, y = Latitude), color = "black") + 
+  geom_point(data = results, aes(x = Longitude, y = Latitude), color = "red") +
+  geom_sf(data = faults, color = "royalblue", alpha = 0.75) +
+  coord_sf(xlim = c(-128, -115), ylim = c(32, 42.5)) +
+  labs(title = "California Fault Lines",
+       x = "Longitude",
+       y = "Latitute") +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(hjust = 0.5, size = 12),
+        text = element_text(family = "CMU Serif"))
+
+ggsave("faults_overlay.png", width = 5, height = 5)
+```
+
+
+## Corona Data
+```{r}
+corona_timed = fread("covid_county.csv")
+corona_timed[["Date"]] = as.Date(mdy_hm(corona_timed[["Date"]]))
+corona_timed = subset(corona_timed, (Longitude > -124.7844079 & Longitude < -66.9513812) & (Latitude < 49.3457868 & Latitude > 24.7433195))
+head(corona_timed)
+```
+
+```{r}
+corona_date_list = split(corona_timed, by="Date", keep.by = FALSE)
+number_of_counties_with_cases = corona_date_list %>% purrr::map(~length(which(select(., Cases) != 0))) %>% unlist %>% unname
+day_number.50_counties = max(which(number_of_counties_with_cases < 50))
+
+corona_date_list_subset = corona_date_list[day_number.50_counties:length(corona_date_list)]
+```
+
+```{r}
+expand_data = function(idx){
+  df = corona_date_list_subset[idx][[1]]
+  df = df[df$Cases !=0]
+  
+  df.expanded = df[rep(seq_len(nrow(df)), df$Cases), 1:2] %>% map_df(~jitter(., factor = 0.1))
+  return(df.expanded)
+}
+```
+
+```{r}
+plot_results = function(idx, df.expanded, results){
+  p = ggplot(data = states) +
+    geom_sf() +
+    geom_point(data = df.expanded, aes(x = Longitude, y = Latitude), color = "black") + 
+    geom_point(data = results, aes(x = Longitude, y = Latitude), color = "red") +
+    labs(title = paste0(names(corona_date_list_subset[idx]), " (n = ", as.character(nrow(df.expanded)), ")"),
+         y = "Latitude",
+         x = "Longitude") +
+    theme(panel.grid.major = element_line(colour = "grey"),
+          panel.grid.minor = element_blank(),
+          panel.background = element_blank(),
+          plot.title = element_text(hjust = 0.5, size = 14),
+          axis.title = element_text(hjust = 0.5, size = 12),
+          text = element_text(family = "CMU Serif"))
+  #ggsave(paste0("COVID_day", idx, ".png"), width = 6, height = 3)
+  p
+}
+```
+
+
+```{r}
+df.expanded = expand_data(3)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.55, threshold = 0.025, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p1 = plot_results(3, df.expanded, results)
+```
+
+```{r}
+df.expanded = expand_data(6)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.5, threshold = 0.025, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p2 = plot_results(6, df.expanded, results)
+```
+
+```{r}
+df.expanded = expand_data(9)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.45, threshold = 0.025, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p3 = plot_results(9, df.expanded, results)
+```
+
+```{r}
+df.expanded = expand_data(12)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.35, threshold = 0.025, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p4 = plot_results(12, df.expanded, results)
+```
+
+```{r}
+df.expanded = expand_data(15)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.30, threshold = 0.015, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p5 = plot_results(15, df.expanded, results)
+```
+
+```{r}
+df.expanded = expand_data(18)
+results = SCMS(as.matrix(df.expanded), bandwidth = 0.15, threshold = 0.0125, max_iterations = 10000, epsilon = 0.001, print_iter = FALSE)
+p6 = plot_results(18, df.expanded, results)
+```
+
+```{r, fig.width=12, fig.height=12}
+p7 = (p1 | p2) /
+     (p3 | p4) /
+     (p5 | p6)
+
+ggsave("COVID_timeseries.png", p7, width = 12, height = 12)
+p7
+```
+
+
+```{r}
+df.expanded = expand_data(73)
+
+ggplot(data = states) +
+  geom_sf() +
+  geom_point(data = df.expanded, aes(x = Longitude, y = Latitude), color = "black") + 
+  labs(title = paste0(names(corona_date_list_subset[73]), " (n = ", as.character(nrow(df.expanded)), ")"),
+       y = "Latitude",
+       x = "Longitude") +
+  theme(panel.grid.major = element_line(colour = "grey"),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        plot.title = element_text(hjust = 0.5, size = 14),
+        axis.title = element_text(hjust = 0.5, size = 12),
+        text = element_text(family = "CMU Serif"))
+
+ggsave("millions.png", width = 12, height = 6)
+```
+>>>>>>> d34e1fc5aa03d5085e42e8edb65f4b5c9595f112
