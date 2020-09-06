@@ -46,7 +46,7 @@ vector<Vector2f> nearest_neighbors(Vector2f x, const vector<Vector2f> points, co
     return nNs;
 }
 
-//Gaussian Kernal value
+//Gaussian Kernel value
 float std_normal(const float x) {
     return exp(-0.5 * x * x) / sqrt(2 * M_PI);
 }

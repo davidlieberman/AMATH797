@@ -247,7 +247,7 @@ void nearest_neighbors(Vector2d src_point, kd_tree point_tree, float sigma, vect
     }
 }
 
-//Gaussian Kernal value
+//Gaussian Kernel value
 float std_normal(float x) {
     return exp(-0.5 * x * x) / sqrt(2 * M_PI);
 }

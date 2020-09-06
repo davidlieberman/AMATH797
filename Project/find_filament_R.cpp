@@ -13,7 +13,7 @@ using namespace Eigen;
 using namespace Rcpp;
 using namespace std;
 
-//Gaussian Kernal value
+//Gaussian Kernel value
 float std_normal(float x) {
   return exp(-0.5 * x * x) / sqrt(2 * M_PI);
 }
