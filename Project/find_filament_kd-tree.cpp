@@ -385,13 +385,16 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
 }
 
 MatrixXd readCSV(const string filepath) {
-    ifstream input(filepath);
-    string line;
+    std::ifstream input;
+    input.open(filepath);
+    double x, y;
+    char comma;
     MatrixXd toReturn(3000000, 2);
-    int i = 0;
-    while (getline(input, line)) {
-        double x, y;
-        sscanf_s(line.c_str(), "%Lf, %Lf", &x, &y, 2);
+    input >> x >> comma >> y;
+    toReturn(0, 0) = x;
+    toReturn(0, 1) = y;
+    int i = 1;
+    while(input >> x >> comma >> y) {
         toReturn(i, 0) = x;
         toReturn(i, 1) = y;
         ++i;
