@@ -1,9 +1,11 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cfloat>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
-#include <Eigen/dense>
+#include <execution>
+#include <Eigen/Dense>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -313,7 +315,7 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
         max_error = 0.0;
         int points_moved = 0;
 
-        for_each(thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
+        for_each(std::execution::par, thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
             //Do nothing for converged pts
             if (thresholded_point_error.second >= epsilon) {
                 points_moved += 1;

@@ -1,10 +1,11 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include <algorithm>
+#include <cfloat>
+#include <cstdlib>
 #include <vector>
-#include <queue>
-#include <Eigen/dense>
-#include "hnswlib/hnswlib.h"
+#include <algorithm>
+#include <execution>
+#include <Eigen/Dense>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -114,7 +115,7 @@ MatrixXf SCMS(const MatrixXf data, const float bandwidth, const float threshold,
         max_error = 0.0;
         int points_moved = 0;
 
-        for_each(thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
+        for_each(std::execution::par, thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
             //Do nothing for converged pts
             if (thresholded_point_error.second >= epsilon) {
                 points_moved += 1;

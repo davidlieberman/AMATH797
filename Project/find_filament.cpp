@@ -1,9 +1,11 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <cfloat>
 #include <cstdlib>
 #include <vector>
 #include <algorithm>
-#include <Eigen/dense>
+#include <execution>
+#include <Eigen/Dense>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,7 +13,7 @@
 //[[Rcpp::depends(RcppEigen)]]
 //[[Rcpp::plugins(cpp17)]]
 
-#define MIN_ELEMS 5 
+#define MIN_ELEMS 5
 
 using namespace Eigen;
 //using namespace Rcpp;
@@ -51,7 +53,7 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
     auto thresholded_points = points;
     auto remove_it = remove_if(thresholded_points.begin(), thresholded_points.end(), [&](auto x) {return density_estimator(bandwidth, x, points) < threshold; });
     thresholded_points.erase(remove_it, thresholded_points.end());
-   
+
     std::cout << "No. of thresholded points: " << thresholded_points.size() << endl;
 
     //Step 2: Peform the following SCMS until convergence
@@ -72,7 +74,7 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
         max_error = 0.0;
         int points_moved = 0;
 
-        for_each(thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
+        for_each(std::execution::par, thresholded_points_errors.begin(), thresholded_points_errors.end(), [&](auto& thresholded_point_error) {
             //Do nothing for converged pts
             if (thresholded_point_error.second >= epsilon) {
                 points_moved += 1;
@@ -89,7 +91,7 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
                     mu = (x - points[j]) / pow(bandwidth, 2);
                     c = std_normal((x - points[j]).norm() / bandwidth);
                     H += ((c / points.size())
-                        * ((mu * mu.transpose()) - (Matrix2d::Identity(2, 2) / pow(bandwidth, 2))));
+                          * ((mu * mu.transpose()) - (Matrix2d::Identity(2, 2) / pow(bandwidth, 2))));
 
                     //for msv
                     sum_cx = sum_cx + c * points[j];
@@ -115,7 +117,7 @@ MatrixXd SCMS(MatrixXd data, float bandwidth, float threshold, int max_iteration
 
                 max_error = max(max_error, difference);
             }
-            });
+        });
         if (print_iter == true) std::cout << "    Points moved: " << points_moved << endl;
         ++iteration;
     }
@@ -157,15 +159,15 @@ MatrixXd readCSV(const string filepath) {
 }
 
 void writeCSV(MatrixXd output) {
-    ofstream file("C:/Users/darkg/Desktop/output.csv");
+    ofstream file("/home/david/Desktop/output.csv");
     for (int i = 0; i < output.rows(); ++i) {
         file << std::setprecision(15) << output(i, 0) << "," << output(i, 1) << endl;
     }
 }
 
 int main() {
-    MatrixXd input = readCSV("C:/Users/darkg/Desktop/input.csv");
-    MatrixXd output = SCMS(input, 0.55, 0.025, 10000, 0.001, false);
+    MatrixXd input = readCSV("/home/david/Desktop/input.csv");
+    MatrixXd output = SCMS(input, 0.15, 0.0125, 10000, 0.001, false);
     writeCSV(output);
     return 0;
 }
