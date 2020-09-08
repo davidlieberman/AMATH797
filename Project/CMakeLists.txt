@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(CONAN_CMAKE_CXX_STANDARD 20)
 
-set(CMAKE_CXX_FLAGS_RELEASE "-ltbb -mavx -mavx2 -mfma -O3 -fno-unroll-loops -pthread")
+set(CMAKE_CXX_FLAGS_RELEASE "-ltbb -O3 -fno-unroll-loops -pthread")
 #set(CMAKE_CXX_FLAGS_RELEASE "-DMKL_ILP64 -m64 -I${MKLROOT}/include")
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
